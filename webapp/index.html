@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+
+<body>
+
+  <h1>Customer Manager</h1>
+
+  <div id="login">
+    <h2>Login</h2>
+    <input id="username" type="text" placeholder="Username">
+    <input id="password" type="password" placeholder="Password">
+    <button id="loginBtn">Login</button>
+  </div>
+
+  <div id="customerList" style="display:none">
+    <h2>Customers</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>First Name</th>
+          <th>Last Name</th>
+        </tr>
+      </thead>
+      <tbody id="customersBody">
+      </tbody>
+    </table>
+    <button id="addCustomerBtn">Add Customer</button>
+  </div>
+
+  <div id="addCustomerForm" style="display:none">
+    <h2>Add Customer</h2>
+    <form id="addCustomer">
+      <input name="first_name" type="text" placeholder="First Name">
+      <input name="last_name" type="text" placeholder="Last Name">
+      <!-- other fields -->
+      <button type="submit">Submit</button>
+    </form>
+  </div>
+
+  <script>
+    // Login button click handler
+    $('#loginBtn').click(function() {
+      var username = $('#username').val();
+      var password = $('#password').val();
+      
+      // Call Java backend for authentication
+      $.post('authenticate', {username: username, password: password}, function(token) {
+        // Save auth token and show customer list
+        localStorage.setItem('token', token); 
+        $('#login').hide();
+        $('#customerList').show();
+        
+        // Load customer list
+        loadCustomers();
+      });
+    });
+    
+    // Load customers
+    function loadCustomers() {
+      var token = localStorage.getItem('token');
+      
+      $.get('getCustomers', {token: token}, function(customers) {
+        $('#customersBody').empty();
+        
+        customers.forEach(function(customer) {
+          var row = `
+            <tr>
+              <td>${customer.first_name}</td>
+              <td>${customer.last_name}</td>
+            </tr>
+          `;
+          $('#customersBody').append(row);
+        });
+      });
+    }
+    
+    // New customer submit handler
+    $('#addCustomerForm').submit(function(e) {
+      e.preventDefault();
+      
+      var formData = $(this).serialize();
+      var token = localStorage.getItem('token');
+      
+      $.post('createCustomer', {data: formData, token: token}, function() {
+        // Close form and reload customers
+        $('#addCustomerForm').hide();
+        $('#customerList').show();
+        loadCustomers();
+      });
+    }); 
+  </script>
+
+</body>
+</html>
